@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yc.mybatis.mapper.UserMapper">
+<!-- 二级缓存 默认是关闭的
+	启动二级缓存：
+		1.启动二级缓存
+		2.把药缓存的数据commit到二级缓存
+		3.要序列化要存入二级缓存的实体类
+		<cache/>-->
+	 
+	<select id="findUser" parameterType="User" resultType="User">
+		select * from profile where id=#{id} and name=#{name}
+	</select>
+	
+	<resultMap type="PagenationBean" id="PagenationBeanMap">
+		<collection property="rows" column="{pageSize=pageSize,currPage=currPage}" select="getUsers"></collection>
+	</resultMap>
+	
+	<!-- #是采用占位符
+		$是直接取到值
+	 -->
+	<select id="getUserByPagenation" parameterType="PagenationBean" resultMap="PagenationBeanMap">
+		select count(1) total,ceil(count(1)/${pageSize}) totalPage,${pageSize} pageSize, ${currPage} currPage from PROFILE
+	</select>
+	<select id="getUsers" resultType="User">
+		select * from 
+		(select m.*,rownum rn from
+		(select * from PROFILE order by 1 desc)m where ${currPage}*${pageSize}>=rownum) where rn>(${currPage}-1)*${pageSize}
+	</select>
+	
+	<update id="updateUser" parameterType="User"> 
+		update profile set name=#{name},birthday=#{birthday},gender=#{gender},career=#{career},
+		address=#{address},mobile=#{mobile}<if test="picPath!=null">,picPath=#{picPath}</if> where id=#{id}
+	</update> 
+	
+	<select id="getUserId" parameterType="int" resultType="User">
+		select * from profile where id=#{id}
+	</select>
+</mapper>
